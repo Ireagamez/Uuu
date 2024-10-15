@@ -1,0 +1,37 @@
+# DDoS Attack Prevention Tool
+
+import socket
+import threading
+
+class DDoSPreventionTool:
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.active_connections = set()
+
+    def handle_client(self, client_socket):
+        self.active_connections.add(client_socket)
+        try:
+            while True:
+                data = client_socket.recv(1024)
+                if not data:
+                    break
+        finally:
+            self.active_connections.remove(client_socket)
+            client_socket.close()
+
+    def start_server(self):
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind((self.host, self.port))
+        server.listen(5)
+        print(f"Listening on {self.host}:{self.port}")
+
+        while True:
+            client_socket, addr = server.accept()
+            print(f"Accepted connection from {addr}")
+            client_handler = threading.Thread(target=self.handle_client, args=(client_socket,))
+            client_handler.start()
+
+if __name__ == "__main__":
+    prevention_tool = DDoSPreventionTool('0.0.0.0', 8080)
+    prevention_tool.start_server()
